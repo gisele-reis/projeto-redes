@@ -2,7 +2,7 @@
 
 ### Topologia da Rede
 
-![image](https://github.com/user-attachments/assets/9ec07df6-7814-43fa-84a4-1af6f6b81197)
+![image](https://github.com/user-attachments/assets/11054df5-2180-4497-a8f7-cc370ef0c5c1)
 
 ### Pré-requisitos
 * Três instâncias EC2 onde o frontend está hospedado.
