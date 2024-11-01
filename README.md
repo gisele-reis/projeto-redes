@@ -217,7 +217,6 @@
     ```
 
 2. **Configuração do PostgreSQL em um container Docker**
-
     * Puxe a imagem do PostgreSQL:
 
     <br>
@@ -261,8 +260,7 @@
     > Se, por algum motivo, o container parar (não estiver listado), reinicie-o com o comando ``` docker start <container_id> ```
 
 3. **Conectar ao PostgreSQL**
-
-  * Acesse o container do PostgreSQL:
+    * Acesse o container do PostgreSQL:
 
     <br>
 
@@ -272,7 +270,7 @@
 
     ```
     
-  * Crie uma tabela no banco de dados:
+    * Crie uma tabela no banco de dados:
 
     <br>
 
@@ -286,7 +284,7 @@
 
     ```
 
-  * Insira dados na tabela:
+    * Insira dados na tabela:
 
     <br>
 
