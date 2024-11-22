@@ -1,16 +1,18 @@
 # Criação de Infraestrutura de Rede
 
-### Topologia da Rede
+  ### Topologia da Rede
 
 ![image](https://github.com/user-attachments/assets/11054df5-2180-4497-a8f7-cc370ef0c5c1)
 
-### Pré-requisitos
+
+  ### Pré-requisitos
 * Três instâncias EC2 onde o frontend está hospedado.
 * Uma instância EC2 para o Load Balancer.
-* Uma instância EC2 para o Proxy Reverso.
-* Uma instância EC2 para o Banco de Dados.
-* Uma instância EC2 onde o backend está hospedado.
-  
+* Uma instância EC2 para o Proxy Reverso e VPN.
+* Uma instância EC2 para o Backend e Banco de Dados.
+
+
+*******
 
 ## Configuração do Load Balancer
 1. **Instalação do NGINX**
@@ -102,6 +104,8 @@
 
       ```
 
+  *******
+  
  ## Configuração do Proxy Reverso
  1. **Instalação do NGINX**
     * Acesse a máquina 5 (Proxy Reverso).
@@ -191,8 +195,113 @@
 
       ```
 
+  *******
+  
+## Configuração da VPN
+1. **Instalação do OpenVPN no servidor**
+   * Acesse a máquina 5 (Proxy Reverso).
+   * Faça o download do script de instalação:
+
+   <br>
+
+   ```
+
+   wget https://git.io/vpn -O openvpn-install.sh
+
+   ```
+
+   * Torne o script executável:
+
+   <br>
+
+   ```
+
+   sudo chmod +x openvpn-install.sh
+
+   ```
+
+   * Execute o script para instalar o OpenVPN:
+
+   <br>
+
+   ```
+
+   sudo bash openvpn-install.sh
+
+   ```
+
+   * Copie o arquivo de configuração do cliente para o diretório do usuário padrão:
+
+   <br>
+
+   ```
+
+   sudo cp /root/client1.ovpn ~
+
+   ```
+
+   * Baixe o arquivo ``.ovpn`` para a máquina local:
+
+   <br>
+
+   ```
+
+   scp -i /caminho/para/chave.pem ubuntu@<IP-SERVIDOR>:/home/ubuntu/client1.ovpn .
+
+   ```
+
+2. **Configuração do Cliente no Windows**
+   * Baixe o cliente OpenVPN: [OpenVPN Community Downloads](https://openvpn.net/community-downloads/);
+   * Copie o arquivo ``.ovpn`` para a pasta C:\Program Files\OpenVPN\config\;
+   * Abra o cliente OpenVPN e selecione o arquivo de configuração ``.ovpn`` para conectar-se ao servidor.
+
+   <br>
+
+3. **Configuração do NGINX para Trabalhar com a VPN**
+   * Edite o arquivo de configuração do NGINX:
+
+   <br>
+
+   ```
+
+   sudo nano /etc/nginx/sites-available/default
+
+   ```
+
+   * Adicione a modificação para escutar apenas a interface VPN:
+  
+   <br>
+
+   ```
+
+   listen 10.8.0.1:80;
+
+   ```
+
+   * Reinicie o NGINX:
+
+   <br>
+
+   ```
+
+   sudo systemctl restart nginx
+
+   ```
+
+   * Para visualizar o arquivo de configuração do servidor OpenVPN, execute:
+
+   <br>
+
+   ```
+
+   sudo nano /etc/openvpn/server/server.conf
+
+   ```
+
+*******
+
 ## Configuração do Banco de Dados
-1. **Instalação do Docker**
+1. **Instalação do Docker e Docker Compose**
     * Acesse a máquina 6 (Banco de Dados).
     * Execute o comando:
 
@@ -201,53 +310,65 @@
     ```
 
     sudo apt update
-    sudo apt install docker.io -y
-
-    ```
-    
-    * Inicie e habilite o Docker para iniciar automaticamente
-  
-    <br>
+    sudo apt install -y docker.io docker-compose
 
     ```
 
-    sudo systemctl start docker
-    sudo systemctl enable docker
-
-    ```
-
-2. **Configuração do PostgreSQL em um container Docker**
-    * Puxe a imagem do PostgreSQL:
-
-    <br>
-
-    ```
-
-    sudo docker pull postgres
-
-    ```
-    
-    * Configure o nome do banco de dados, usuário e senha:
+2. **Configurar o Docker Compose**
+    * Crie o arquivo ``docker-compose.yml`` na raiz do projeto:
     
     <br>
 
     ```
 
-    sudo docker run --name my_postgres_db -e POSTGRES_USER=login_user -e POSTGRES_PASSWORD=password123 -e POSTGRES_DB=logins_db -p 5432:5432 -d postgres
+    sudo nano /projeto-redes/backend/docker-compose.yml
+    
+    ```
+
+    * Adicione a seguinte configuração para preparar o banco de dados PostgreSQL:
+
+    <br>
+
+    ```
+
+    version: "3.8"
+    services:
+      db:
+        image: postgres:latest
+        container_name: postgres_container
+        environment:
+          POSTGRES_USER: USER_NAME
+          POSTGRES_PASSWORD: USER_PASSWORD
+          POSTGRES_DB: DB_NAME
+        ports:
+          - "5432:5432"
+        volumes:
+          - db_data:/var/lib/postgresql/data
+    volumes:
+      db_data:
+
+    ```
+
+3. **Rodar o Projeto**
+    * O backend utiliza o módulo ``child-process`` para  executar comandos externos, como o ``docker-compose up``, que permite subir os containers. 
+    * Executar o backend:
+
+    <br>
+
+    ```
+
+    npm start
 
     ```
     
-    * Explicação dos parâmetros:
-      * `` --name my_postgres_db ``: Nome do container. 
-      * `` -e POSTGRES_USER=login_user ``: Define o usuário do PostgreSQL.
-      * `` -e POSTGRES_PASSWORD=password123 ``: Define a senha do usuário.
-      * `` -e POSTGRES_DB=logins_db ``: Nome do banco de dados.
-      * `` -p 5432:5432 ``: Mapeia a porta do container para a porta do host (EC2).
-      * `` -d ``: Roda o container em segundo plano.
+    * Ordem de inicialização:
+      1. Docker Compose é iniciado: o comando ``docker-compose up -d`` inicializa o container PostgreSQL.
+      2. O Sequelize sincroniza com o banco de dados no container.
+      3. O servidor Express é iniciado na porta 3000.
 
-    <br>
-    
-    * Verifique se o container está rodando:
+
+4. **Acessar Banco de Dados diretamente pelo container**
+   * Verifique se o container está rodando:
 
     <br>
 
@@ -257,73 +378,22 @@
 
     ```
 
-    > Se, por algum motivo, o container parar (não estiver listado), reinicie-o com o comando ``` docker start <container_id> ```
-
-3. **Conectar ao PostgreSQL**
-    * Acesse o container do PostgreSQL:
+    * Conecte-se ao container Docker:
 
     <br>
 
     ```
 
-    sudo docker exec -it my_postgres_db psql -U login_user -d logins_db
+    docker exec -it postgres_container psql -U USER_NAME -d DB_NAME
 
     ```
-    
-    * Crie uma tabela no banco de dados:
+
+    * Para visualizar os usuários cadastrados, execute dentro do shell do PostgreSQL:
 
     <br>
 
     ```
 
-    CREATE TABLE users (
-      id SERIAL PRIMARY KEY,
-      username VARCHAR(50),
-      password VARCHAR(50)
-    );
+    SELECT * FROM "Users";
 
     ```
-
-    * Insira dados na tabela:
-
-    <br>
-
-    ```
-
-    INSERT INTO users (username, password) VALUES ('user1', 'password1');
-    INSERT INTO users (username, password) VALUES ('user2', 'password2');
-
-    ```
-
-4. **Configuração do Acesso Externo**
-   * Para acessar o banco de dados de fora da instância é necessário permitir o acesso externo.
-   * Edite o arquivo de configuração `` postgresql.conf `` para permitir acessos externos.
-   * Entre no container:
-
-   <br>
-
-   ```
-
-   sudo docker exec -it my_postgres_db bash
-
-   ```
-
-   * Edite o arquivo de configuração:
-
-   <br>
-
-   ```
-
-   nano /var/lib/postgresql/data/postgresql.conf
-
-   ```
-
-   * Altere o `` listen_addresses `` para permitir qualquer IP:
-
-   <br>
-
-   ```
-
-   listen_addresses = '*'
-
-   ```
