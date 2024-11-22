@@ -251,8 +251,7 @@
    ```
 
 2. **Configuração do Cliente no Windows**
-   * Baixe o cliente OpenVPN: [OpenVPN Community Downloads](https://openvpn.net/community-downloads/);
-   * Copie o arquivo ``.ovpn`` para a pasta C:\Program Files\OpenVPN\config\;
+   * Baixe o cliente OpenVPN: [OpenVPN Connect](https://openvpn.net/client/client-connect-vpn-for-windows/);
    * Abra o cliente OpenVPN e selecione o arquivo de configuração ``.ovpn`` para conectar-se ao servidor.
 
    <br>
